@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  go-app:
+    image: meenaljy/go-app:latest
+    ports:
+      - "8080:8080"
+
+  nextjs-app:
+    image: meenaljy/nextjs-app:latest
+    ports:
+      - "3000:3000"
+
+  wordpress:
+    image: meenaljy/wordpress-site:latest
+    ports:
+      - "8081:80"
