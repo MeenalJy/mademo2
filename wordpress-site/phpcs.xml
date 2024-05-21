@@ -1,0 +1,3 @@
+<ruleset name="WordPress Coding Standards">
+  <rule ref="WordPress-Core" />
+</ruleset>
