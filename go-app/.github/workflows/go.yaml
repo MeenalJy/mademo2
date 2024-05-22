@@ -1,47 +1,74 @@
 name: Go CI
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
 
 jobs:
-  build:
+  lint-test-build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.16
+          go-version: 1.17
+
+      - name: Change to Go directory
+        run: cd go
+
       - name: Install dependencies
-        run: go mod tidy
-      - name: Run Linter
-        run: golangci-lint run
-      - name: Run Tests
-        run: go test ./...
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-=======
-      - name: Build Docker Image
         run: |
-          docker build -t your-dockerhub-username/go-app:latest .
-          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-          docker push your-dockerhub-username/go-app:latest
+          cd go
+          go mod tidy
+
+      - name: Run lint
+        run: |
+          cd go
+          golangci-lint run ./...
+
+      - name: Run tests
+        run: |
+          cd go
+          go test -v ./...
+
+      - name: Build
+        run: |
+          cd go
+          go build -o myapp
 
   deploy:
+    needs: lint-test-build
     runs-on: ubuntu-latest
-    needs: build
+    if: github.ref == 'refs/heads/main'
 
     steps:
-      - name: Deploy to Staging
-        uses: appleboy/ssh-action@v0.1.5
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd /path/to/your/staging/directory
-            docker-compose pull go-app
-            docker-compose up -d
->>>>>>> eacba7c (Deployed to staging env)
->>>>>>> 8b94a48 (Newly Update go.yaml)
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: ./go
+          file: ./go/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/myapp-go:latest
+
+      - name: Deploy to staging environment
+        run: |
+          echo "Deploying to staging environment..."
+          # Add deployment steps here
