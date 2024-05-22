@@ -20,7 +20,7 @@ jobs:
           go-version: 1.17
 
       - name: Install dependencies
-        run: go mod download
+        run: go mod tidy
 
       - name: Run lint
         run: golangci-lint run ./...
